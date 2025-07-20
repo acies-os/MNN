@@ -2,19 +2,10 @@
 //  SwinTransformer.cpp
 //  MNN
 //
-
-
-
-
-/**
- * Error: 
- * 1. _Gelu is undefined
- * 2. 
- */
 #include <algorithm>
 #include "SwinTransformer.hpp"
 #include "SwinUtils.hpp"
-#include "NeuralNetworkOp.hpp"
+#include <MNN/expr/NeuralNetWorkOp.hpp>
 #include <MNN/expr/MathOp.hpp>
 #include "MNN_generated.h"
 
@@ -46,7 +37,7 @@ static VARP _Gelu(VARP x) {
     op->type = OpType_UnaryOp;
     op->main.type = OpParameter_UnaryOp;
     op->main.value = new UnaryOpT;
-    op->main.AsUnaryOp()->opType = (UnaryOpOperation)32; // UnaryOpOperation_GELU
+    op->main.AsUnaryOp()->opType = static_cast<UnaryOpOperation>(32); // UnaryOpOperation_GELU
     return Variable::create(Expr::create(std::move(op), {x}));
 }
 
@@ -68,7 +59,7 @@ std::vector<VARP> Mlp::onForward(const std::vector<VARP> &inputs) {
     VARP x = inputs[0];
     
     x = fc1->forward(x);
-    x = _Gelu(x);
+    x = MNN::Express::_Gelu(x); // use the MNN::Express::_Gelu instead of the _Gelu
     x = dropout->forward(x);
     x = fc2->forward(x);
     x = dropout->forward(x);
@@ -512,7 +503,7 @@ void SwinTransformerV4_CMC::initEncoder() {
                 bool useDownsample = (iLayer < timeFreqBlockNum.at(mod).size() - 1);
                 
                 auto layer = std::make_shared<BasicLayer>(layerDim, layerResolution,
-                                                            timeFreqHeadNum, windowSize.at(mod),
+                                                            timeFreqBlockNum.at(mod)[iLayer], timeFreqHeadNum, windowSize.at(mod),
                                                             mlpRatio, qkvBias, -1.0f, dropRate,
                                                             attnDropRate, layerDropPath, useDownsample);
                 
